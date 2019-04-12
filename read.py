@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib
+from matplotlib import dates as d
 import csv
 import numpy as np
 import h5py
@@ -59,6 +61,7 @@ class Engine:
 		times 			= self.df["ATA_ATD_ltc_Time"]
 		times_planned 	= self.df["STA_STD_ltc_Time"]
 		self.df['DELAY'] = (pd.to_datetime(times,format=date_format,errors="coerce") - pd.to_datetime(times_planned,format=date_format,errors="coerce"))
+		self.df['ATA_ATD_ltc_Time'] = pd.to_datetime(times,format=date_format,errors="coerce")
 		if self.db:
 			self.print("[OK] loading delay completed \n")
 
@@ -67,11 +70,10 @@ class Engine:
 			self.print("[  ] loading wingspans...\r")
 		header = ["AC TYPE","Wingspans"]
 		wing_df = pd.read_csv(filename, encoding = "utf-8",delimiter ="\t",names=header)
-		rename_dict = wing_df.set_index('AC TYPE').to_dict()['Wingspans']
+		self.df.insert(6,'Wingspan', wing_df.iloc[:,1])
 		if self.db:
 			self.print("[OK] loading wingspans completed \n")
-		#doesnt work
-		#self.df = self.df.replace(rename_dict)
+
 
 	def optimize(self):
 		gl_obj = self.df.select_dtypes(include=['object']).copy()
@@ -109,6 +111,26 @@ if __name__ == "__main__":
 	Airport.get_delay()
 	Airport.get_wingspans()
 	Airport.optimize()
+	data = Airport.df
+	print(data.iloc[0])
+	#data['ATA_ATD_ltc_Time'] = data.index.map(lambda x: x.strftime("%H:%M:%S"))
+	# data = data.groupby('ATA_ATD_ltc_Time').describe().unstack()
+	# data.index = pd.to_datetime(data.index.astype(str))
+	#
+	# fig, ax = plt.subplots(1, figsize=(12, 6))
+	# ax.set_title('Diurnal Profile', fontsize=14)
+	# ax.set_ylabel('Gas Concentrations', fontsize=14, weight='bold')
+	# ax.set_xlabel('Time of Day', fontsize=14)
+	# ax.plot(data.index, data['Wingspan'], 'g', linewidth=2.0)
+	#
+	# ticks = ax.get_xticks()
+	# ax.set_xticks(np.linspace(ticks[0], d.date2num(d.num2date(ticks[-1]) + dt.timedelta(hours=3)), 5))
+	# ax.set_xticks(np.linspace(ticks[0], d.date2num(d.num2date(ticks[-1]) + dt.timedelta(hours=3)), 25), minor=True)
+	# ax.xaxis.set_major_formatter(matplotlib.dates.DateFormatter('%I:%M %p'))
+	#
+	# plt.tight_layout()
+	# plt.show()
+
 	# Airport.write_to_csv
 
 	# AC_counts = Counter(Airport.df["AC Type"])
