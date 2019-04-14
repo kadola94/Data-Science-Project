@@ -62,7 +62,7 @@ class Engine:
 		if self.db:
 			self.write("[OK] loading delay completed \n")
 
-	def get_wingspans(self,filename="wingspans.txt"):
+	def get_wingspans(self,filename="wingspans.csv"):
 		if self.db:
 			self.write("[  ] loading wingspans...\r")
 		header = ["AC Type","Wingspans"]
