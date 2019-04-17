@@ -1,4 +1,4 @@
-from mpl_toolkits.basemap import Basemap
+#from mpl_toolkits.basemap import Basemap
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -135,15 +135,78 @@ class Engine:
 		usage_mb = usage_b / 1024 ** 2  # convert bytes to megabytes
 		return "{:03.2f} MB".format(usage_mb)
 
+
+class Weather:
+
+	def __init__(self,debug=False):
+		self.db = debug
+		self.df = None
+
+	def write(self,string):
+		sys.stdout.write(string)
+		sys.stdout.flush()
+
+	def load_dataset(self):
+		header = ["Wetterstation","Time","Boeenspitze 3s","Boeenspitze 1s","Temp","Niederschlag","Visibility","Windgeschwindigkeit","Windrichtung"]
+		counter = 1
+		if self.db:
+			self.write("[  ] loading dataset...\r")
+			counter += 1
+		filename = "weather.txt"
+		self.df = pd.read_csv(filename, skiprows = [2], encoding = "utf-8",delimiter =";",names=header)
+		if self.db:
+			self.write("[OK]\n")
+
+	def get_times(self):
+		if self.db:
+			self.write("[  ] loading times...\r")
+		date_format 	= "%Y%m%d%H%M%S"
+		days 			= self.df["Time"]
+		self.df['Time'] = pd.to_datetime(days, format=date_format, errors="coerce")
+		if self.db:
+			self.write("[OK] loading times completed\n")
+
+
+	def optimize(self):
+		gl_obj = self.df.select_dtypes(include=['object']).copy()
+		optimized_gl = self.df.copy()
+		converted_obj = pd.DataFrame()
+
+		for col in gl_obj.columns:
+			num_unique_values = len(gl_obj[col].unique())
+			num_total_values = len(gl_obj[col])
+			if num_unique_values / num_total_values < 0.5:
+				converted_obj.loc[:, col] = gl_obj[col].astype('category')
+			else:
+				converted_obj.loc[:, col] = gl_obj[col]
+
+		compare_obj = pd.concat([gl_obj.dtypes, converted_obj.dtypes], axis=1)
+		compare_obj.columns = ['before', 'after']
+		compare_obj.apply(pd.Series.value_counts)
+		optimized_gl[converted_obj.columns] = converted_obj
+		self.df = optimized_gl
+
+	def mem_usage(self,pandas_obj):
+		if isinstance(pandas_obj, pd.DataFrame):
+			usage_b = pandas_obj.memory_usage(deep=True).sum()
+		else:  # we assume if not a df it's a series
+			usage_b = pandas_obj.memory_usage(deep=True)
+		usage_mb = usage_b / 1024 ** 2  # convert bytes to megabytes
+		return "{:03.2f} MB".format(usage_mb)
+
 if __name__ == "__main__":
 
-	Airport = Engine(True)
-	Airport.load_dataset()
-	Airport.get_timestamps()
-	Airport.get_delay()
-	Airport.get_wingspans()
-	Airport.get_coordinates()
-	#Airport.optimize()
+	# Airport = Engine(True)
+	# Airport.load_dataset()
+	# Airport.get_timestamps()
+	# Airport.get_delay()
+	# Airport.get_wingspans()
+	# Airport.get_coordinates()
+	# Airport.optimize()
+
+	Weather = Weather(True)
+	Weather.load_dataset()
+	Weather.get_times()
 
 
 
