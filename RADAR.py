@@ -92,18 +92,17 @@ class Engine:
 
 if __name__ == "__main__":
 
-	Airport = Engine(True)
-	Airport.load_data()
+	RADAR = Engine(True)
+	RADAR.load_data()
 	with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-		print(Airport.df.head())
-	#Airport.plot_routes()
+		print(RADAR.df.head())
+	#RADAR.plot_routes()
 
-	#plt.show()
-	#AC_counts = Counter(Airport.df["AC Type"])
+	#AC_counts = Counter(RADAR.df["AC Type"])
 	#df = pd.DataFrame.from_dict(AC_counts, orient='index')
 	#df.plot(kind='bar')
 	# with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-	# 	print(Airport.df.head())
+	# 	print(RADAR.df.head())
 
 
 
