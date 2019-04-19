@@ -139,6 +139,7 @@ class Engine:
 		"Destination Lat","Destination Long","Gusts 1s","Gusts 3s",\
 		"Temperature","Precipitation","Visibility","Wind Speed","Wind Direction"]
 		self.df = self.df[order]
+		self.df = self.df.sort_values(by=['Timestamp'])
 
 	def save(self):
 		if self.db:
@@ -159,8 +160,8 @@ if __name__ == "__main__":
 	Airport.reorder()
 	Airport.save()
 
-	# with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-	# 	print(Airport.df.head())
+	with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+		print(Airport.df.head())
 
 
 
