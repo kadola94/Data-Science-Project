@@ -98,6 +98,11 @@ if __name__ == "__main__":
 		print(RADAR.df.head())
 	#RADAR.plot_routes()
 
+	wind_speed = RADAR.df["Wind Speed"]
+	wingspans = RADAR.df["Wingspans"]
+	print(max(wind_speed))
+	plt.scatter(wind_speed,wingspans)
+	plt.show()
 	#AC_counts = Counter(RADAR.df["AC Type"])
 	#df = pd.DataFrame.from_dict(AC_counts, orient='index')
 	#df.plot(kind='bar')

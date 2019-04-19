@@ -140,6 +140,8 @@ class Engine:
 		"Temperature","Precipitation","Visibility","Wind Speed","Wind Direction"]
 		self.df = self.df[order]
 		self.df = self.df.sort_values(by=['Timestamp'])
+		#fix some wrong values:
+		self.df["Wind Speed"][self.df["Wind Speed"] > 300] = np.nan
 
 	def save(self):
 		if self.db:
