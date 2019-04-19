@@ -143,7 +143,7 @@ class Engine:
 	def save(self):
 		if self.db:
 			self.write("[  ] saving dataset...\r")
-		self.df.to_csv("dataset.txt", sep=',', encoding='utf-8',index=False)
+		self.df.to_csv("../dataset.txt", sep=',', encoding='utf-8',index=False)
 		if self.db:
 			self.write("[OK]\n")
 if __name__ == "__main__":
