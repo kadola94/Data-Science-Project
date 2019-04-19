@@ -24,7 +24,7 @@ class Engine:
 		sys.stdout.write(string)
 		sys.stdout.flush()
 
-	def load_dataset(self):
+	def load_airport(self):
 		header = ["Day","Airline Code","Airline Name","Call Sign","Movement LSV","AC Type","IATA","ICAO","ACTUAL","EXPECTED","RWY","ATM Def","Sitze"]
 		counter = 1
 		for year in self.years:
@@ -146,26 +146,23 @@ class Weather:
 		sys.stdout.write(string)
 		sys.stdout.flush()
 
-	def load_dataset(self):
+	def load_waether(self,filename = "weather.csv"):
 		header = ["Wetterstation","Time","Boeenspitze 3s","Boeenspitze 1s","Temp","Niederschlag","Visibility","Windgeschwindigkeit","Windrichtung"]
-		counter = 1
 		if self.db:
 			self.write("[  ] loading dataset...\r")
-			counter += 1
-		filename = "weather.txt"
-		self.df = pd.read_csv(filename, skiprows = [2], encoding = "utf-8",delimiter =";",names=header)
+		self.weather = pd.read_csv(filename, skiprows = 1, encoding = "utf-8",delimiter =",",names=header)
 		if self.db:
 			self.write("[OK]\n")
 
 	def get_times(self):
 		if self.db:
 			self.write("[  ] loading times...\r")
-		date_format 	= "%Y%m%d%H%M%S"
-		days 			= self.df["Time"]
-		self.df['Time'] = pd.to_datetime(days, format=date_format, errors="coerce")
+		date_format 	= "%Y%m%d%H%M"
+		days 			= self.weather["Time"]
+		self.weather['Time'] = pd.to_datetime(days, format=date_format, errors="coerce")
+		print(self.weather['Time'])
 		if self.db:
 			self.write("[OK] loading times completed\n")
-
 
 	def optimize(self):
 		gl_obj = self.df.select_dtypes(include=['object']).copy()
@@ -205,7 +202,7 @@ if __name__ == "__main__":
 	# Airport.optimize()
 
 	Weather = Weather(True)
-	Weather.load_dataset()
+	Weather.load_waether()
 	Weather.get_times()
 
 
