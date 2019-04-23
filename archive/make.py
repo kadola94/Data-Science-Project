@@ -50,6 +50,9 @@ class Engine:
 		self.df['Timestamp'] 	= pd.to_datetime(days + " " + times,format=date_format,errors="coerce")
 		self.df["Year"] 		= pd.to_datetime(days + " " + times,format=date_format,errors="coerce").dt.year
 		self.df["Weekday"] 	= pd.to_datetime(days + " " + times,format=date_format,errors="coerce").dt.dayofweek
+		date_format 	= "%H:%M:%S"
+		self.df['T actual'] 	= pd.to_datetime(times,format=date_format,errors="coerce")
+		self.df['T expected'] 	= pd.to_datetime(times_planned,format=date_format,errors="coerce")
 		if self.db:
 			self.write("[OK] loading timestamps completed\n")
 
@@ -142,6 +145,10 @@ class Engine:
 		self.df = self.df.sort_values(by=['Timestamp'])
 		#fix some wrong values:
 		self.df["Wind Speed"][self.df["Wind Speed"] > 300] = np.nan
+		self.df["Gusts 1s"][self.df["Gusts 1s"] < 0] = np.nan
+		self.df["Gusts 3s"][self.df["Gusts 3s"] < 0] = np.nan
+		self.df["Visibility"][self.df["Visibility"] < 0] = np.nan
+		self.df["Wind Direction"][self.df["Wind Direction"] < 0] = np.nan
 
 	def save(self):
 		if self.db:
