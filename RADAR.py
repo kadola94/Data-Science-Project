@@ -96,16 +96,41 @@ if __name__ == "__main__":
 	RADAR.load_data()
 	with pd.option_context('display.max_rows', None, 'display.max_columns', None):
 		print(RADAR.df.head())
-	#RADAR.plot_routes()
 
-	wind_speed = RADAR.df["Wind Speed"]
-	wingspans = RADAR.df["Wingspans"]
-	print(max(wind_speed))
-	plt.scatter(wind_speed,wingspans)
+	rwys_n = [0, 10, 14, 16, 28, 32, 34]
+	rwys = []
+	for i in rwys_n:
+		rwys.append(RADAR.df.loc[RADAR.df["RWY"] == i])
+
+	fig = plt.figure()
+	bin_size = 10
+	for i in range(7):
+		runway = rwys[i]
+		a, b = np.histogram(runway['Wind Direction'], bins = np.arange(0, 360 + bin_size, bin_size))
+		centers = np.deg2rad(np.ediff1d(b) // 2 + b[:-1])
+		i = 331+ i
+		ax = fig.add_subplot(i, projection = 'polar')
+		ax.bar(centers, a, width=np.deg2rad(bin_size), bottom=0.0, color='.8', edgecolor='k')
+		ax.set_theta_zero_location("N")
+		ax.set_theta_direction(-1)
+		ax.set_title(' Runway {}'.format(rwys_n[i-331]))
+		# line = zip(np.deg2rad(rwys_n[i-331]*10), np.max(a))
+		ax.plot([np.deg2rad(rwys_n[i-331]*10), np.deg2rad(rwys_n[i-331]*10)], [0, np.max(a)], c = 'r')
+		# ax.plot((0, line[0]), (0, line[1]), c = 'r',zorder = 3)
+
 	plt.show()
-	#AC_counts = Counter(RADAR.df["AC Type"])
-	#df = pd.DataFrame.from_dict(AC_counts, orient='index')
-	#df.plot(kind='bar')
+
+	#RADAR.plot_routes()
+	#
+	# wind_speed = RADAR.df["Wind Direction"]
+	# wingspans = RADAR.df["Wingspans"]
+	# RADAR.df['Wind Direction'].hist(by=RADAR.df['RWY'], range=(0, RADAR.df['Wind Direction'].max()), bins = 36, density = True)
+	# print(max(wind_speed))
+	# plt.scatter(wind_speed,wingspans)
+	# plt.show()
+	# AC_counts = Counter(RADAR.df["AC Type"])
+	# df = pd.DataFrame.from_dict(AC_counts, orient='index')
+	# df.plot(kind='bar')
 	# with pd.option_context('display.max_rows', None, 'display.max_columns', None):
 	# 	print(RADAR.df.head())
 
