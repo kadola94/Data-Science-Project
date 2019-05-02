@@ -116,7 +116,7 @@ class Engine:
 			# ax.plot((0, line[0]), (0, line[1]), c = 'r',zorder = 3)
 
 		fig.tight_layout(pad=1, h_pad=2.0)
-		plt.savefig('ohne_grosse.pdf', dpi = 100)
+		plt.savefig('Filtered_wind_speed.pdf', dpi = 100)
 		plt.show()
 
 if __name__ == "__main__":
