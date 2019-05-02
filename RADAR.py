@@ -90,35 +90,46 @@ class Engine:
 		usage_mb = usage_b / 1024 ** 2  # convert bytes to megabytes
 		return "{:03.2f} MB".format(usage_mb)
 
+	def roundplots(self):
+		rwys_n = [10, 14, 16, 28, 32, 34]
+		windspeed_median = self.df['Wind Speed'].median()
+		rwys = []
+		for i in rwys_n:
+			rwys.append(self.df.loc[(self.df["RWY"] == i) & (self.df["Wingspans"] < 60) & (self.df["Wind Speed"] > windspeed_median)])
+		fig = plt.figure()
+		fig.set_size_inches(19.2, 10.8)
+		bin_size = 10
+		for i in range(len(rwys_n)):
+			runway = rwys[i]
+			a, b = np.histogram(runway['Wind Direction'], bins = np.arange(0, 360 + bin_size, bin_size))
+			centers = np.deg2rad(np.ediff1d(b) // 2 + b[:-1])
+			i = 231+ i
+			ax = fig.add_subplot(i, projection = 'polar')
+			ax.bar(centers, a, width=np.deg2rad(bin_size), bottom=0.0, color='.8', edgecolor='k')
+			ax.set_theta_zero_location("N")
+			ax.set_theta_direction(-1)
+			figure_title = 'Runway {}'.format(rwys_n[i-231])
+			plt.text(0.5, 1.15, figure_title, horizontalalignment='center', fontsize=15, transform = ax.transAxes)
+			#ax.set_title('Runway {}'.format(rwys_n[i-331]), verticalalignment = 'bottom')
+			# line = zip(np.deg2rad(rwys_n[i-331]*10), np.max(a))
+			ax.plot([np.deg2rad(rwys_n[i-231]*10), np.deg2rad(rwys_n[i-231]*10)], [0, np.max(a)], c = 'r')
+			# ax.plot((0, line[0]), (0, line[1]), c = 'r',zorder = 3)
+
+		fig.tight_layout(pad=1, h_pad=2.0)
+		plt.savefig('ohne_grosse.pdf', dpi = 100)
+		plt.show()
+
 if __name__ == "__main__":
 
 	RADAR = Engine(True)
 	RADAR.load_data()
-	with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-		print(RADAR.df.head())
+	# with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+	#	print(RADAR.df.head())
 
-	rwys_n = [0, 10, 14, 16, 28, 32, 34]
-	rwys = []
-	for i in rwys_n:
-		rwys.append(RADAR.df.loc[RADAR.df["RWY"] == i])
+	RADAR.roundplots()
 
-	fig = plt.figure()
-	bin_size = 10
-	for i in range(7):
-		runway = rwys[i]
-		a, b = np.histogram(runway['Wind Direction'], bins = np.arange(0, 360 + bin_size, bin_size))
-		centers = np.deg2rad(np.ediff1d(b) // 2 + b[:-1])
-		i = 331+ i
-		ax = fig.add_subplot(i, projection = 'polar')
-		ax.bar(centers, a, width=np.deg2rad(bin_size), bottom=0.0, color='.8', edgecolor='k')
-		ax.set_theta_zero_location("N")
-		ax.set_theta_direction(-1)
-		ax.set_title(' Runway {}'.format(rwys_n[i-331]))
-		# line = zip(np.deg2rad(rwys_n[i-331]*10), np.max(a))
-		ax.plot([np.deg2rad(rwys_n[i-331]*10), np.deg2rad(rwys_n[i-331]*10)], [0, np.max(a)], c = 'r')
-		# ax.plot((0, line[0]), (0, line[1]), c = 'r',zorder = 3)
 
-	plt.show()
+
 
 	#RADAR.plot_routes()
 	#
