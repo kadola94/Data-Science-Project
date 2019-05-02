@@ -50,9 +50,12 @@ class Engine:
 		self.df['Timestamp'] 	= pd.to_datetime(days + " " + times,format=date_format,errors="coerce")
 		self.df["Year"] 		= pd.to_datetime(days + " " + times,format=date_format,errors="coerce").dt.year
 		self.df["Weekday"] 	= pd.to_datetime(days + " " + times,format=date_format,errors="coerce").dt.dayofweek
-		date_format 	= "%H:%M:%S"
-		self.df['T actual'] 	= pd.to_datetime(times,format=date_format,errors="coerce")
-		self.df['T expected'] 	= pd.to_datetime(times_planned,format=date_format,errors="coerce")
+		#date_format 	= "%H:%M:%S"
+		days 			= "01.01.2000"
+		self.df['T actual'] 		= pd.to_datetime(days + " " + times,format=date_format,errors="coerce")
+		self.df['T actual UT'] 		= pd.to_datetime(days + " " + times,format=date_format,errors="coerce").astype(np.int64)/1000000
+		self.df['T expected'] 		= pd.to_datetime(days + " " + times_planned,format=date_format,errors="coerce")
+		self.df['T expected UT'] 	= pd.to_datetime(days + " " + times_planned,format=date_format,errors="coerce").astype(np.int64)/1000000
 		if self.db:
 			self.write("[OK] loading timestamps completed\n")
 
@@ -124,6 +127,7 @@ class Engine:
 		w_dir 	= interp.interp1d(t,w["Windrichtung"],fill_value="extrapolate")
 
 		t = self.df['Timestamp'].astype(np.int64)/1000000
+		self.df['UNIX'] = t
 		self.df['Gusts 1s'] 		= gusts1(t)
 		self.df['Gusts 3s'] 		= gusts3(t)
 		self.df['Temperature'] 		= temp(t)
@@ -135,8 +139,8 @@ class Engine:
 			self.write("[OK]\n")
 
 	def reorder(self):
-		order = ["Timestamp","Date","Year","Weekday",\
-		"T expected","T actual","Delay","Airline Code",\
+		order = ["Timestamp","UNIX","Date","Year","Weekday",\
+		"T expected","T expected UT","T actual","T actual UT","Delay","Airline Code",\
 		"Airline Name","Call Sign","Movement LSV","RWY",\
 		"ATM Def","AC Type","Wingspans","Seats","IATA","ICAO",\
 		"Destination Lat","Destination Long","Gusts 1s","Gusts 3s",\
@@ -149,6 +153,7 @@ class Engine:
 		self.df["Gusts 3s"][self.df["Gusts 3s"] < 0] = np.nan
 		self.df["Visibility"][self.df["Visibility"] < 0] = np.nan
 		self.df["Wind Direction"][self.df["Wind Direction"] < 0] = np.nan
+		self.df.dropna(how='any',inplace = True)
 
 	def save(self):
 		if self.db:
@@ -156,6 +161,7 @@ class Engine:
 		self.df.to_csv("../dataset.txt", sep=',', encoding='utf-8',index=False)
 		if self.db:
 			self.write("[OK]\n")
+
 if __name__ == "__main__":
 
 	Airport = Engine(True)
