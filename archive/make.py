@@ -49,6 +49,7 @@ class Engine:
 		times_planned 	= self.df["T expected"]
 		self.df['Timestamp'] 	= pd.to_datetime(days + " " + times,format=date_format,errors="coerce")
 		self.df["Year"] 		= pd.to_datetime(days + " " + times,format=date_format,errors="coerce").dt.year
+		self.df["Hour"] 		= pd.to_datetime(days + " " + times,format=date_format,errors="coerce").dt.hour
 		self.df["Weekday"] 	= pd.to_datetime(days + " " + times,format=date_format,errors="coerce").dt.dayofweek
 		#date_format 	= "%H:%M:%S"
 		days 			= "01.01.2000"
@@ -139,7 +140,7 @@ class Engine:
 			self.write("[OK]\n")
 
 	def reorder(self):
-		order = ["Timestamp","UNIX","Date","Year","Weekday",\
+		order = ["Timestamp","UNIX","Date","Year","Weekday","Hour",\
 		"T expected","T expected UT","T actual","T actual UT","Delay","Airline Code",\
 		"Airline Name","Call Sign","Movement LSV","RWY",\
 		"ATM Def","AC Type","Wingspans","Seats","IATA","ICAO",\
