@@ -107,7 +107,11 @@ class Engine:
 				avg[RWY]["weekends"][month] = we
 		return avg
 
-
+	def combine_to_hour(self,inplace=False):
+		if inplace:
+			self.df = self.df.groupby(["Date","Hour"]).mean()
+		else:
+			self.cdf = self..df.groupby(["Date","Hour"]).mean()
 
 
 
@@ -144,6 +148,15 @@ if __name__ == "__main__":
 	RADAR.load_data()
 	with pd.option_context('display.max_rows', None, 'display.max_columns', None):
 		print(RADAR.df.head())
+
+
+	RADAR.combine_to_hour()
+
+
+
+
+
+
 	#RADAR.plot_routes()		
 	#RADAR.df.dropna(how='any',inplace = True)
 	avg = RADAR.get_average()
@@ -175,41 +188,23 @@ if __name__ == "__main__":
 			ax.set_xlim(dt.datetime(2000,1,1,0,0,0,0),dt.datetime(2000,1,1,23,59,59,0))
 			norm = False
 			if norm:
-				#a_heights, a_bins = np.histogram(weekdays["T actual UT"], bins= 946684800*1000+np.arange(0,24*60*60*1000,60*60*1000) )
-				#b_heights, b_bins = np.histogram(weekends["T actual UT"], bins= a_bins)
-				a_heights, a_bins = np.histogram(weekdays["Hour"], bins= np.arange(0,25) )
-				b_heights, b_bins = np.histogram(weekends["Hour"], bins= a_bins)
-				#print(a_bins)
 
-				a_bins = 946684800*1000+np.arange(0,24*60*60*1000,60*60*1000) - 90*1000
-				b_bins = 946684800*1000+np.arange(0,24*60*60*1000,60*60*1000) - 90*1000
-				a_bins =[dt.datetime.fromtimestamp(ts/1000) for ts in a_bins]
-				b_bins =[dt.datetime.fromtimestamp(ts/1000) for ts in b_bins]
 				norm_we = (RADAR.n_days*2/7/24)
 				norm_wd = (RADAR.n_days*5/7/24)
 
-				#ax.bar(np.array(a_bins[:-1])-np.array([dt.timedelta(minutes=30) for i in a_bins[:-1]]), a_heights/5, width = 0.5 * (1 / 24), facecolor='cornflowerblue')
-				ax.bar(a_bins, b_heights/norm_we, width = (1 / 24), alpha=0.5, facecolor='deepskyblue',	edgecolor="black")
-				ax.bar(b_bins, a_heights/norm_wd, width = (1 / 24), alpha=0.5, facecolor='cornflowerblue',edgecolor="black")
+				for hour in range(0,24):
+					ax.bar(dt.datetime(2000,1,1,hour,0,0,0)+dt.timedelta(minutes=30),len(weekends[weekends["Hour"] == hour])/(norm_we),width = (1 / 24), alpha=0.5, facecolor='deepskyblue',	edgecolor="black")
+					ax.bar(dt.datetime(2000,1,1,hour,0,0,0)+dt.timedelta(minutes=30),len(weekdays[weekdays["Hour"] == hour])/(norm_wd),width = (1 / 24), alpha=0.5, facecolor='deepskyblue',	edgecolor="black")
+
 			else:
-				num_day = 0
 				weekdays = weekdays[ weekdays["Date"] == '11.{:02d}.2016'.format(month)]
 				weekends = weekends[ weekends["Date"] == '11.{:02d}.2016'.format(month)]
-				#a_heights, a_bins = np.histogram(weekdays["T actual UT"], bins= 946684800*1000+np.arange(0,24*60*60*1000,60*60*1000) )
-				#b_heights, b_bins = np.histogram(weekends["T actual UT"], bins= a_bins)
-				a_heights, a_bins = np.histogram(weekdays["Hour"], bins= np.arange(0,25) )
-				b_heights, b_bins = np.histogram(weekends["Hour"], bins= a_bins)
-				#print(a_bins)
-				a_bins = 946684800*1000+np.arange(0,24*60*60*1000,60*60*1000) - 90*1000
-				b_bins = 946684800*1000+np.arange(0,24*60*60*1000,60*60*1000) - 90*1000
-				a_bins =[dt.datetime.fromtimestamp(ts/1000) for ts in a_bins]
-				b_bins =[dt.datetime.fromtimestamp(ts/1000) for ts in b_bins]
-
-				#ax.bar(np.array(a_bins[:-1])-np.array([dt.timedelta(minutes=30) for i in a_bins[:-1]]), a_heights/5, width = 0.5 * (1 / 24), facecolor='cornflowerblue')
-				ax.bar(a_bins, b_heights, width = (1 / 24), alpha=0.5, facecolor='deepskyblue',	edgecolor="black")
-				ax.bar(b_bins, a_heights, width = (1 / 24), alpha=0.5, facecolor='cornflowerblue',edgecolor="black")			
+	
+				for hour in range(0,24):
+					#ax.bar(dt.datetime(2000,1,1,hour,0,0,0)+dt.timedelta(minutes=30),len(weekends[weekends["Hour"] == hour]),width = (1 / 24), alpha=0.5, facecolor='deepskyblue',	edgecolor="black")
+					ax.bar(dt.datetime(2000,1,1,hour,0,0,0)+dt.timedelta(minutes=30),len(weekdays[weekdays["Hour"] == hour]),width = (1 / 24), alpha=0.5, facecolor='deepskyblue',	edgecolor="black")
 			for hour in range(0,24):
-				ax.scatter(dt.datetime(2000,1,1,hour,0,0,0),avg[RWY]["weekdays"][month][hour],color="red")
+				ax.plot([dt.datetime(2000,1,1,hour,0,0,0),dt.datetime(2000,1,1,hour,59,59,0)],[avg[RWY]["weekdays"][month][hour],avg[RWY]["weekdays"][month][hour]],color="red",linewidth=2)
 			#ax.set_aspect('auto')
 
 
@@ -246,6 +241,10 @@ if __name__ == "__main__":
 		# with pd.option_context('display.max_rows', None, 'display.max_columns', None):
 		# 	print(RADAR.df.head())
 
+
+
+
+
 	# performance calculation takes ages
 	exit()
 
@@ -266,6 +265,7 @@ if __name__ == "__main__":
 
 						#a_heights, a_bins = np.histogram(weekdays["T actual UT"], bins= 946684800*1000+np.arange(0,24*60*60*1000,60*60*1000) )
 						a_heights, a_bins = np.histogram(weekdays["Hour"], bins= np.arange(0,24) )
+
 
 						error = avg[RWY]["weekdays"][month][hour] - a_heights[hour]
 						print(error)
