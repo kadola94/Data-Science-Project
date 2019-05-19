@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import csv
 import numpy as np
+from scipy.optimize import curve_fit
 import h5py
 import pytz
 import time
@@ -95,7 +96,7 @@ class Engine:
 		windspeed_average = self.df['Wind Speed'].mean()
 		rwys = []
 		for i in rwys_n:
-			rwys.append(self.df.loc[(self.df["RWY"] == i) & (self.df["Wingspans"] > 60) & (self.df["Wind Speed"] > windspeed_average) & (self.df["Movement LSV"] == 'S')])
+			rwys.append(self.df.loc[(self.df["RWY"] == i) & (self.df["Wind Speed"] > 2) & (self.df["Movement LSV"] == 'L') & (self.df["Wind Direction"] <= 360) & (self.df["Wind Direction"] >= 180)])
 		fig = plt.figure()
 		fig.set_size_inches(19.2, 10.8)
 		bin_size = 10
@@ -115,7 +116,46 @@ class Engine:
 			# ax.plot((0, line[0]), (0, line[1]), c = 'r',zorder = 3)
 
 		fig.tight_layout(pad=1, h_pad=2.0)
-		plt.savefig('Filtered_wind_speed.pdf', dpi = 100)
+		plt.show()
+		plt.savefig('find_wind_threshold.pdf', dpi = 100)
+
+	def gausss(self, x, sigma, mu, offset, amplitude):
+		amplitude = np.linalg.norm(amplitude)
+		return amplitude * np.exp(-(x-mu)**2/sigma**2) + offset
+
+	def wind_threshold(self):
+		rwys_n = [10, 14, 16, 28, 32, 34]
+		rwys = []
+		for i in rwys_n:
+			rwys.append(self.df.loc[(self.df["RWY"] == i) & (self.df["Wind Speed"] > 0) & (self.df["Movement LSV"] == 'L') & (self.df["Wind Direction"] <= 360) & (self.df["Wind Direction"] >= 0)])
+		fig = plt.figure()
+		fig.set_size_inches(19.2, 10.8)
+		n_bins = 150
+		bin_x = np.linspace(0,360, n_bins)
+		bin_y = np.linspace(0, 20, n_bins)
+		thresholds = []
+		for i in range(len(rwys_n)):
+			plt.subplot(2,3,i+1)
+			runway = rwys[i]
+			x = np.array(runway['Wind Direction'])
+			y = np.array(runway['Wind Speed'])
+			title = 'Runway {}'.format(rwys_n[i])
+			plt.title(title)
+			plt.xlabel('Wind Direction [°]')
+			plt.ylabel('Wind Speed [m/s]')
+			plt.hist2d(x,y, bins = (bin_x, bin_y), cmin = 1)
+			plt.colorbar()
+			# ind = np.where(y == max(y))[0][0]
+			# mu = x[ind]
+			# amplitud = max(y)
+			# p0 = [30, mu, 2, amplitud]
+			# popt, pcov = curve_fit(self.gausss, x, y, p0 = p0)
+			# thresholds.append(popt[-2])
+			# x = np.linspace(min(x),max(x),1000)
+			# print('Threshold for Runway {} is {}'.format(rwys_n[i], popt[-2]))
+			# plt.plot(x, self.gausss(x, *popt), c = 'r')
+		fig.tight_layout(pad=1, h_pad=2.0)
+		plt.savefig('wind_threshold_nofit.pdf', dpi=100)
 
 	def vis_precip_correlations(self):
 		visibility_limit = 10000
@@ -192,10 +232,10 @@ class Engine:
 		wind_speed = self.df['Wind Speed']
 		precipication = self.df['Precipitation']
 		temperature = self.df['Temperature']
-		delay = delay.dt.total_seconds()
+		delay = delay.dt.total_seconds()/3600
 
-		delay_max = delay.max()
-		delay_min = delay.min()
+		#delay_max = delay.max()
+		#delay_min = delay.min()
 		visibility_max = self.df['Visibility'].max()
 		wind_speed_max = self.df['Wind Speed'].max()
 		precipication_max = self.df['Precipitation'].max()
@@ -208,7 +248,8 @@ class Engine:
 		binx_precipitation = np.linspace(0, precipication_max, bins)
 		binx_temperature = np.linspace(T_min, T_max, bins)
 
-		biny = np.linspace(delay_min, delay_max, bins)
+		biny = np.linspace(-5, 10, bins)
+
 
 		# a_1, b_1 = np.polyfit(x_1, y, 1)
 		# a_2, b_2 = np.polyfit(x_2, y, 1)
@@ -223,42 +264,101 @@ class Engine:
 		plt.subplot(2,2,1)
 		plt.title('Delay - Visibility')
 		plt.xlabel('Visibility [m]')
-		plt.ylabel('Delay [min]')
-		plt.hist2d(anti_visibility,delay, bins = (binx_visibility, biny), cmin = 1, label = 'Data Points')
+		plt.ylabel('Delay [h]')
+		plt.hist2d(anti_visibility,delay, bins = (binx_visibility, biny), cmin = 1)
 		# plt.plot(x_lin_1, x_lin_1*a_1 + b_1, '-r', lw = 0.5, label =r'Fit: f(x) = a$\cdot$x + b with a = {:.2E} and b = {:.2E}'.format(a_1, b_1))
 		plt.colorbar()
-		plt.legend(frameon=True)
 
 		plt.subplot(2,2,2)
 		plt.title('Delay - Wind Speed')
 		plt.xlabel('Wind Speed [m/s]')
-		plt.ylabel('Delay [min]')
-		plt.hist2d(wind_speed,delay, bins = (binx_wind_speed, biny), cmin = 1, label = 'Data Points')
+		plt.ylabel('Delay [h]')
+		plt.hist2d(wind_speed,delay, bins = (binx_wind_speed, biny), cmin = 1)
 		# plt.plot(x_lin_2, x_lin_2*a_2 + b_2, '-r', lw = 0.5, label =r'Fit: f(x) = a$\cdot$x + b with a = {:.2E} and b = {:.2E}'.format(a_2, b_2))
 		plt.colorbar()
-		plt.legend(frameon=True)
 
 		plt.subplot(2,2,3)
 		plt.title('Delay - Precipitation')
 		plt.xlabel('Precipitation [mm]')
-		plt.ylabel('Delay [min]')
-		plt.hist2d(precipication,delay, bins = (binx_precipitation, biny), cmin = 1, label = 'Data Points')
+		plt.ylabel('Delay [h]')
+		plt.hist2d(precipication,delay, bins = (binx_precipitation, biny), cmin = 1)
 		# plt.plot(x_lin_2, x_lin_2*a_2 + b_2, '-r', lw = 0.5, label =r'Fit: f(x) = a$\cdot$x + b with a = {:.2E} and b = {:.2E}'.format(a_2, b_2))
 		plt.colorbar()
-		plt.legend(frameon=True)
 
 		plt.subplot(2,2,4)
 		plt.title('Delay - Temperature')
 		plt.xlabel('Temperature [°C]')
-		plt.ylabel('Delay [min]')
-		plt.hist2d(temperature,delay, bins = (binx_temperature, biny), cmin = 1, label = 'Data Points')
+		plt.ylabel('Delay [h]')
+		plt.hist2d(temperature,delay, bins = (binx_temperature, biny), cmin = 1)
 		# plt.plot(x_lin_2, x_lin_2*a_2 + b_2, '-r', lw = 0.5, label =r'Fit: f(x) = a$\cdot$x + b with a = {:.2E} and b = {:.2E}'.format(a_2, b_2))
 		plt.colorbar()
-		plt.legend(frameon=True)
+		#plt.legend(frameon=True)
 
 		fig.tight_layout(pad=1, h_pad=2.0)
 
 		plt.savefig('Delay_vs_everything.pdf', dpi = 100)
+
+	def stats(self):
+		print('Number of entries: {}'.format(self.df.shape[1]))
+		movements = []
+		years = [2014, 2015, 2016, 2017, 2018]
+		for year in years:
+			#percentage = self.df.loc[self.df['Year'] == year].shape[0]/self.df.loc[self.df['Year'] == year-1].shape[0]-1
+			#print('Average in {}: {} \nIncrease: \t\t {:.2%}'.format(year, self.df.loc[self.df['Year'] == year].shape[0], percentage))
+			movements.append(self.df.loc[self.df['Year'] == year].shape[0])
+		mov_max, mov_min = max(movements), min(movements)
+		movements = np.array(movements)
+
+		fig = plt.figure()
+		fig.set_size_inches(10, 10)
+		plt.bar(years, movements)
+		plt.axis([2013.5, 2018.5, mov_min-5000, mov_max + 1000])
+		plt.xticks(years)
+		plt.xlabel('Years')
+		plt.ylabel('Flight Movements')
+		plt.title('Flight Movement Trend')
+		plt.savefig('Flight_Movement_Trend.pdf', dpi = 100)
+		percentage = self.df.loc[self.df['Year'] == 2018].shape[0] / self.df.loc[self.df['Year'] == 2014].shape[0] - 1
+		print('Total increase in Flight movements in the last 5 years: {:.2%}'.format(percentage))
+		print('Max Wind Gusts: {:.2f}km/h'.format(self.df['Gusts 1s'].max() * 3.6))
+		print('Min Visibility: {:.2f}m'.format(self.df['Visibility'].min()))
+
+		# delay = pd.Series(pd.to_timedelta(self.df['Delay'], unit = 's'))
+		# delay = delay.dt.total_seconds()
+		# delay_max = delay.max()
+		# print(plt.hist
+	# 'Max delay: {:.2f} hours'.format(delay_max/3600))
+
+	def avro(self):
+		ac_types = ['RJ1H', 'BCS1', 'BCS3']
+		swiss = 'Swiss International Air Lines AG'
+		# delays:
+		delays = []
+		for type in ac_types:
+			delay = pd.Series(pd.to_timedelta(self.df['Delay'].loc[(self.df['AC Type'] == type) & (self.df["Airline Name"] == swiss)], unit='s'))
+			delay = np.array(delay.dt.total_seconds() / 60)
+			mean = np.mean(delay)
+			std = np.std(delay)
+			delays.append(delay)
+			print('for aircraft type {} we have: {:.2f} +/- {:.2f}'.format(type, mean, std))
+
+		fig = plt.figure()
+		fig.set_size_inches(10,10)
+		plt.ylim(-40, 80)
+		plt.ylabel('Delay [min]')
+		plt.xlabel('Aircraft Types')
+		plt.boxplot(delays)
+		plt.xticks([1, 2, 3], ac_types)
+		plt.savefig('jumbolino_delays.pdf', dpi = 100)
+		plt.show()
+
+
+
+
+
+
+
+
 
 
 
@@ -266,13 +366,17 @@ if __name__ == "__main__":
 
 	RADAR = Engine(True)
 	RADAR.load_data()
+	# RADAR.stats()
 	# with pd.option_context('display.max_rows', None, 'display.max_columns', None):
-	# 	print(RADAR.df.head())
+	#  	print(RADAR.df.head())
 
-	RADAR.wind_directions()
-	RADAR.vis_precip_correlations()
-	RADAR.wind_correlations()
-	RADAR.delay_correlations()
+	# RADAR.wind_directions()
+	# RADAR.vis_precip_correlations()
+	# RADAR.wind_correlations()
+	# RADAR.delay_correlations()
+	# RADAR.wind_threshold()
+	# RADAR.avro()
+
 
 
 
